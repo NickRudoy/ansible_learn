@@ -1,15 +1,30 @@
 - hosts: webservers
-
   tasks:
-    - name: install redis server
+    - name: install nginx
       ansible.builtin.apt:
-        name: redis-server
-        state: present
-        update_cache: yes
+        name: nginx
+        state: latest
       become: yes
 
-    - name: remove redis server
-      ansible.builtin.apt:
-        name: redis-server
-        state: absent
-      become: yes 
+    - name: update nginx config
+      ansible.builtin.copy:
+        src: files/nginx.conf
+        dest: /etc/nginx/nginx.conf
+      notify:
+        - restart nginx
+      become: yes
+
+    - name: update nginx html
+      ansible.builtin.copy:
+        src: files/index.html
+        dest: /usr/share/nginx/html/index.html
+      notify:
+        - restart nginx
+      become: yes
+
+  handlers:
+    - name: restart nginx
+      ansible.builtin.service:
+        name: nginx
+        state: reloaded
+      become: yes
