@@ -1,0 +1,44 @@
+- hosts: webservers
+  become: true
+  vars:
+    users:
+      - jaime
+      - sansa
+      - robert
+  tasks:
+
+    - name: Create users on the server
+      user:
+        name: "{{ item }}"
+        state: present
+      loop: "{{ users }}"
+
+    - name: Ensure .ssh directory exists
+      file:
+        path: "/home/{{ item }}/.ssh"
+        state: directory
+        mode: '0700'
+        owner: "{{ item }}"
+        group: "{{ item }}"
+      loop: "{{ users }}"
+
+    - name: Upload public SSH key for users
+      copy:
+        src: files/id_rsa.pub
+        dest: "/home/{{ item }}/.ssh/authorized_keys"
+        mode: '0600'
+        owner: "{{ item }}"
+        group: "{{ item }}"
+      loop: "{{ users }}"
+
+    - name: Configure Git for each user
+      template:
+        src: gitconfig.j2
+        dest: "/home/{{ item }}/.gitconfig"
+        owner: "{{ item }}"
+        group: "{{ item }}"
+        mode: '0644'
+      loop: "{{ users }}"
+      vars:
+        user_email: "{{ item }}@test.com"
+        user_name: "{{ item }}"
